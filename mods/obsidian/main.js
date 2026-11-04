@@ -7,6 +7,7 @@ import { props } from "herdr";
 import { Search } from "./search.js";
 import { Panel } from "./panel.js";
 import { Note } from "./note.js";
+import { track } from "./agent.js";
 
 export default class Obsidian extends View {
   init(_props, cx) {
@@ -16,10 +17,12 @@ export default class Obsidian extends View {
   }
 
   render(cx) {
+    // Remember the agent terminal focused last: Send and Save act on it.
+    track();
     return this.view.render(cx);
   }
 
   close(cx) {
-    this.view.close?.(cx);
+    this.view?.close?.(cx);
   }
 }

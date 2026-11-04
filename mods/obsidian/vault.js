@@ -225,23 +225,34 @@ export async function today() {
   return rel;
 }
 
-// Adds "- text" to the end of today's note.
-export async function capture(text) {
+// Adds text to the end of today's note, retrying if the note changes meanwhile.
+// Returns the note's path.
+async function appendToday(text) {
   const { root } = await config();
-  const abs = `${root}/${await today()}`;
+  const rel = await today();
+  const abs = `${root}/${rel}`;
   for (let attempt = 0; attempt < 3; attempt++) {
     const before = (await readTextFile(abs)) ?? "";
     const sep = before && !before.endsWith("\n") ? "\n" : "";
-    try { await writeTextFile(abs, `${before}${sep}- ${text}\n`, before); return; }
+    try { await writeTextFile(abs, `${before}${sep}${text}`, before); return rel; }
     catch (e) { if (attempt === 2) throw e; }
   }
 }
 
-// A new empty note where Obsidian puts new notes. Returns its path.
+// Adds "- text" to the end of today's note.
+export const capture = (text) => appendToday(`- ${text}\n`);
+
+// Adds a "## heading" section with the text to the end of today's note.
+export const appendSection = (heading, text) => appendToday(`\n## ${heading}\n\n${text.replace(/\s+$/, "")}\n`);
+
+const cleanName = (name) => name.trim().replace(/\.md$/i, "").replace(/[\\:*?"<>|#^[\]]/g, "-");
+const newPath = (c, clean) => `${c.newFolder && !clean.includes("/") ? c.newFolder + "/" : ""}${clean}.md`;
+
+// A new empty note where Obsidian puts new notes, or the one already there with
+// that name. Returns its path.
 export async function create(name) {
   const c = await config();
-  const clean = name.trim().replace(/\.md$/i, "").replace(/[\\:*?"<>|]/g, "-");
-  const rel = `${c.newFolder && !clean.includes("/") ? c.newFolder + "/" : ""}${clean}.md`;
+  const rel = newPath(c, cleanName(name));
   const abs = `${c.root}/${rel}`;
   if ((await readTextFile(abs)) === null) {
     await ensureFolder(abs);
@@ -249,6 +260,23 @@ export async function create(name) {
     listed = null;
   }
   return rel;
+}
+
+// A new note holding text, where Obsidian puts new notes. A name that's taken gets
+// " 2", " 3", ... as Obsidian does; nothing is overwritten. Returns its path.
+export async function createWith(name, text) {
+  const c = await config();
+  const clean = cleanName(name) || "Untitled";
+  for (let n = 1; n < 100; n++) {
+    const rel = newPath(c, n === 1 ? clean : `${clean} ${n}`);
+    const abs = `${c.root}/${rel}`;
+    if ((await readTextFile(abs)) !== null) continue;
+    await ensureFolder(abs);
+    try { await writeTextFile(abs, text, null); } catch { continue; }
+    listed = null;
+    return rel;
+  }
+  throw new Error(`Too many notes named ${clean}`);
 }
 
 // ---- Opening -------------------------------------------------------------------------
