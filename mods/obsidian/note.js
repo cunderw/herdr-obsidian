@@ -6,7 +6,9 @@ import { focused, notify, props, readTextFile, setShared, shared, spaces, theme,
 import * as vault from "./vault.js";
 
 const ICON = (name) => `mods/obsidian/${name}.svg`;
-const LINK = "obsidian-note:";
+// Wiki links become web links under a reserved host, the one kind of URL TextView
+// is sure to hand to on_link_click unchanged; follow() catches them first.
+const LINK = "https://obsidian-note.invalid/";
 const IMAGE = /\.(png|jpe?g|gif|webp|svg|bmp)$/i;
 
 // Front matter out, Obsidian's own syntax turned into plain markdown.
@@ -123,10 +125,11 @@ export class Note {
     }
   }
 
+  // Runs in a spawned task: a click handler's cx is gone after the first await.
   async follow(url, cx) {
     try {
-      if (/^(https?|mailto|obsidian):/i.test(url)) return vault.openUrl(url);
       const at = url.indexOf(LINK);
+      if (at < 0 && /^(https?|mailto|obsidian):/i.test(url)) return vault.openUrl(url);
       const target = at >= 0 ? decodeURIComponent(url.slice(at + LINK.length)) : decodeURIComponent(url.replace(/^file:\/\//, ""));
       const rel = await vault.resolve(target, this.path);
       if (!rel) return notify({ title: `“${target.split("#")[0]}” doesn't exist yet`, body: "Create it from the search popup", level: "info", timeout: 3000 });
@@ -176,7 +179,7 @@ export class Note {
         : v_flex().id("note-scroll").flex_1().min_h(0).overflow_y_scrollbar().px(22).py(16).gap(10)
             .when(Boolean(tags), (el) => el.child(tags))
             .child(TextView.markdown(`note-${this.gen}`, this.text).selectable(true).text_size(14).text_color(t.foreground)
-              .on_link_click((url, cx) => this.follow(url, cx)))
+              .on_link_click((url, cx) => cx.spawn((cx) => this.follow(url, cx))))
             .when(Boolean(links), (el) => el.child(links));
     return v_flex().id("obsidian-note").size_full().min_h(0).bg(t.background).child(header).child(body);
   }
