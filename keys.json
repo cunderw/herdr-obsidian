@@ -1,0 +1,11 @@
+{
+  "global": {
+    "ctrl-b f": "mod.open:obsidian",
+    "ctrl-b a": { "command": "pane.split", "args": { "direction": "right", "mod": "obsidian", "props": { "view": "panel" } } }
+  },
+  "terminal": {
+    "ctrl-b f": "mod.open:obsidian",
+    "ctrl-b a": { "command": "pane.split", "args": { "direction": "right", "mod": "obsidian", "props": { "view": "panel" } } }
+  },
+  "mod:obsidian": { "ctrl-j": "obsidian.next", "ctrl-k": "obsidian.prev" }
+}
