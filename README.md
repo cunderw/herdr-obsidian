@@ -2,6 +2,8 @@
 
 Your [Obsidian](https://obsidian.md) vault inside the [Herdr](https://herdr.dev) desktop app, as shared memory between you and your agents.
 
+![Find a note, follow a link, send it to an agent, save the reply](demo.gif)
+
 ![Obsidian in Herdr](preview.png)
 
 - **Search popup** (`ctrl-b f`): find a note by name, `/words` to search inside notes, `#tag` to list a tag, `+text` to add a line to today's daily note. Enter opens the note in a viewer pane, Cmd/Ctrl+Enter opens it in Obsidian, Shift+Enter in your editor, and Alt+Enter (or Alt+click) sends it to an agent.
