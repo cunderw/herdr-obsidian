@@ -311,11 +311,16 @@ export function openInViewer(rel, line) {
   const tab = focused()?.tab;
   const registered = Object.values(shared("obsidian.viewers") ?? {}).includes(tab);
   const live = panes().some((p) => p.tab === tab && p.mod === "obsidian");
-  if (tab && registered && live) {
-    setShared("obsidian.show", { tab, note: rel, line: line ?? null, n: Date.now() });
-  } else {
-    run("pane.split", { direction: "right", mod: "obsidian", props: { note: rel, line: line ?? null } });
-  }
+  const split = () => run("pane.split", { direction: "right", mod: "obsidian", props: { note: rel, line: line ?? null } });
+  if (!(tab && registered && live)) return split();
+  const n = Date.now();
+  setShared("obsidian.show", { tab, note: rel, line: line ?? null, n });
+  // A viewer acks through "obsidian.shown"; no ack means the entry outlived its pane.
+  return exec("/bin/sleep", ["0.3"]).then(() => {
+    if ((shared("obsidian.shown")?.n ?? 0) >= n) return;
+    setShared("obsidian.viewers", Object.fromEntries(Object.entries(shared("obsidian.viewers") ?? {}).filter(([, t]) => t !== tab)));
+    split();
+  });
 }
 
 // how: "viewer" (Enter), "obsidian" (Cmd/Ctrl+Enter), "editor" (Shift+Enter).

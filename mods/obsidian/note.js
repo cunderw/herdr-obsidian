@@ -159,7 +159,10 @@ export class Note {
     const ask = shared("obsidian.show");
     if (ask && ask.n !== this.seen) {
       this.seen = ask.n;
-      if (ask.tab === this.tab && ask.note !== this.path) this.show(ask.note, cx);
+      if (ask.tab === this.tab) {
+        setShared("obsidian.shown", { n: ask.n });
+        if (ask.note !== this.path) this.show(ask.note, cx);
+      }
     }
   }
 
